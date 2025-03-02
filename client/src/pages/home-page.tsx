@@ -21,6 +21,7 @@ export default function HomePage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">مرحباً {user?.name || user?.username}</h2>
           <p className="text-gray-600">تم تسجيل دخولك بنجاح</p>
+          <p className="text-gray-600 mt-2">سوف تصلك رسالة الموقع على بريدك المدخل قريباً</p>
         </div>
       </div>
     </div>
