@@ -17,16 +17,10 @@ export default function HomePage() {
             تسجيل الخروج
           </Button>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">معلومات المستخدم</h2>
-          <div className="space-y-2">
-            <p><strong>الاسم:</strong> {user?.name}</p>
-            <p><strong>اسم المستخدم:</strong> {user?.username}</p>
-            <p><strong>البريد الإلكتروني:</strong> {user?.email}</p>
-            <p><strong>رقم الهاتف:</strong> {user?.phone}</p>
-            <p><strong>آخر تسجيل دخول:</strong> {user?.lastLogin ? new Date(user.lastLogin).toLocaleString('ar-SA') : 'لا يوجد'}</p>
-          </div>
+          <h2 className="text-xl font-semibold mb-4">مرحباً {user?.name || user?.username}</h2>
+          <p className="text-gray-600">تم تسجيل دخولك بنجاح</p>
         </div>
       </div>
     </div>

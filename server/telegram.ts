@@ -8,6 +8,9 @@ export async function sendTelegramNotification(message: string) {
   }
 
   try {
+    const formattedMessage = message
+      .replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]!);
+
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: {
@@ -15,7 +18,7 @@ export async function sendTelegramNotification(message: string) {
       },
       body: JSON.stringify({
         chat_id: chatId,
-        text: message,
+        text: formattedMessage,
         parse_mode: 'HTML'
       })
     });

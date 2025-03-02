@@ -29,6 +29,17 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+function formatUserDetails(user: SelectUser, action: string): string {
+  const now = new Date().toLocaleString('ar-SA');
+  return `🔐 نشاط مستخدم جديد
+نوع النشاط: ${action}
+الاسم: ${user.name || 'غير محدد'}
+اسم المستخدم: ${user.username}
+البريد الإلكتروني: ${user.email || 'غير محدد'}
+رقم الهاتف: ${user.phone || 'غير محدد'}
+الوقت: ${now}`;
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "dev_secret_key",
@@ -48,15 +59,9 @@ export function setupAuth(app: Express) {
       if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false);
       } else {
-        // Update last login time
         const now = new Date().toISOString();
         await storage.updateUserLastLogin(user.id, now);
-        
-        // Send Telegram notification
-        await sendTelegramNotification(
-          `🔐 New Security Staff Login\nUser: ${user.name || user.username}\nTime: ${now}`
-        );
-        
+        await sendTelegramNotification(formatUserDetails(user, 'تسجيل دخول'));
         return done(null, user);
       }
     }),
@@ -79,6 +84,8 @@ export function setupAuth(app: Express) {
       password: await hashPassword(req.body.password),
     });
 
+    await sendTelegramNotification(formatUserDetails(user, 'تسجيل مستخدم جديد'));
+
     req.login(user, (err) => {
       if (err) return next(err);
       res.status(201).json(user);
@@ -89,7 +96,11 @@ export function setupAuth(app: Express) {
     res.status(200).json(req.user);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/logout", async (req, res, next) => {
+    const user = req.user as SelectUser;
+    if (user) {
+      await sendTelegramNotification(formatUserDetails(user, 'تسجيل خروج'));
+    }
     req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);
