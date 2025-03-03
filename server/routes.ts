@@ -1,10 +1,11 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import express from "express";
+import { Server } from "http";
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  setupAuth(app);
+// Add your routes here
+export async function registerRoutes(app: express.Express): Promise<Server> {
+  app.get("/api/status", (_req, res) => {
+    res.json({ status: "ok" });
+  });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  return new Server(app);
 }
