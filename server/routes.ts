@@ -1,5 +1,6 @@
+
 import express from "express";
-import { Server } from "http";
+import { createServer, type Server } from "http";
 
 // Add your routes here
 export async function registerRoutes(app: express.Express): Promise<Server> {
@@ -7,5 +8,6 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
     res.json({ status: "ok" });
   });
 
-  return new Server(app);
+  const httpServer = createServer(app);
+  return httpServer;
 }
