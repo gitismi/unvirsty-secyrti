@@ -1,61 +1,39 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
+import { Shield, CheckCircle } from "lucide-react";
 
 export default function HomePage() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
+  const { user, logoutMutation } = useAuth();
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/auth");
-  };
-
-  const goToSearch = () => {
-    navigate("/search");
+    await logoutMutation.mutateAsync();
+    setLocation("/auth");
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>مرحباً بكم في نظام أمن الجامعة</CardTitle>
-          <CardDescription>
-            نظام إدارة الأمن الجامعي المتكامل للمساعدة في تنظيم وتسهيل عمليات الأمن داخل الحرم الجامعي
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <span className="font-bold">اسم المستخدم:</span> {user?.username}
-            </div>
-            {user?.name && (
-              <div>
-                <span className="font-bold">الاسم:</span> {user.name}
-              </div>
-            )}
-            {user?.email && (
-              <div>
-                <span className="font-bold">البريد الإلكتروني:</span> {user.email}
-              </div>
-            )}
-            {user?.phone && (
-              <div>
-                <span className="font-bold">رقم الهاتف:</span> {user.phone}
-              </div>
-            )}
+    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
+      <Card className="w-full max-w-md mx-4">
+        <CardContent className="pt-6">
+          <div className="flex mb-4 gap-2">
+            <Shield className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-bold">مرحباً {user?.name || user?.username}</h1>
           </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <Button className="w-full" onClick={goToSearch}>
-            البحث عن طالب
-          </Button>
-          <Button className="w-full" variant="outline" onClick={handleLogout}>
+
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <p>تم تسجيل دخولك بنجاح</p>
+          </div>
+
+          <p className="text-gray-600">سوف تصلك رسالة الموقع على بريدك المدخل قريباً</p>
+
+          <Button onClick={handleLogout} variant="outline" className="mt-6 w-full">
             تسجيل الخروج
           </Button>
-        </CardFooter>
+        </CardContent>
       </Card>
     </div>
   );
