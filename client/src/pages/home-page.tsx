@@ -27,19 +27,3 @@ export default function HomePage() {
     </div>
   );
 }
-import { Card, CardContent } from "@/components/ui/card";
-
-export default function HomePage() {
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="pt-6">
-          <h1 className="text-2xl font-bold text-gray-900">Home Page</h1>
-          <p className="mt-4 text-sm text-gray-600">
-            Welcome to the application!
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
