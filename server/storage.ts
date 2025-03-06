@@ -1,119 +1,66 @@
-import { eq, sql, or, ilike } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { users } from "@shared/schema";
-import { InsertUser, User } from "@shared/schema";
 import session from "express-session";
-import PgSession from "connect-pg-simple";
+import createMemoryStore from "memorystore";
+import { User, InsertUser } from "@shared/schema";
 
-const client = postgres(
-  process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432",
-);
-const db = drizzle(client);
+const MemoryStore = createMemoryStore(session);
 
-// Mock student data for demonstration
-const mockStudents = [
-  {
-    id: 1,
-    name: "أحمد محمد",
-    studentId: "123456",
-    phone: "0501234567",
-    email: "ahmed@example.com",
-    socialEmail: "ahmed@gmail.com",
-    department: "علوم الحاسب",
-    level: "الرابع"
-  },
-  {
-    id: 2,
-    name: "محمد علي",
-    studentId: "789012",
-    phone: "0509876543",
-    email: "mohammed@example.com",
-    socialEmail: "mohammed@outlook.com",
-    department: "هندسة البرمجيات",
-    level: "الثالث"
-  }
-];
+export interface IStorage {
+  getUser(id: number): Promise<User | undefined>;
+  getUserByIdentifier(identifier: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUserLastLogin(id: number, timestamp: string): Promise<void>;
+  getUserLoginHistory(userId: number): Promise<Array<{userId:number, timestamp:string, ipAddress:string}>>;
+  sessionStore: session.Store;
+}
 
-class Storage {
-  sessionStore: PgSession.PGStore;
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private loginLogs: Array<{userId:number, timestamp:string, ipAddress:string}>;
+  currentId: number;
+  sessionStore: session.Store;
 
   constructor() {
-    const pgSession = PgSession(session);
-    this.sessionStore = new pgSession({
-      conObject: {
-        connectionString:
-          process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432",
-      },
+    this.users = new Map();
+    this.loginLogs = [];
+    this.currentId = 1;
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000,
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return this.users.get(id);
   }
 
   async getUserByIdentifier(identifier: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, identifier));
+    return Array.from(this.users.values()).find(
+      (user) => 
+        user.username === identifier ||
+        user.email === identifier ||
+        user.phone === identifier ||
+        user.name === identifier
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentId++;
+    const user: User = { ...insertUser, id, lastLogin: null };
+    this.users.set(id, user);
     return user;
   }
 
-  async createUser(userData: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .returning({ id: users.id, username: users.username, email: users.email, phone: users.phone, name: users.name });
-    return user as User;
+  async updateUserLastLogin(id: number, timestamp: string): Promise<void> {
+    const user = await this.getUser(id);
+    if (user) {
+      user.lastLogin = timestamp;
+      this.users.set(id, user);
+      this.loginLogs.push({userId: id, timestamp: timestamp, ipAddress: "غير متاح"});
+    }
   }
 
-  async updateUserLastLogin(id: number, lastLogin: string): Promise<void> {
-    await db.update(users).set({ lastLogin }).where(eq(users.id, id));
-  }
-
-  // Search methods for students
-  async searchByPhoneOrName(query: string): Promise<any[]> {
-    // In a real application, you would query your database
-    // For now, we'll use mock data for demonstration
-
-    // This is a mock implementation
-    return mockStudents.filter(student => 
-      student.name.includes(query) || 
-      student.phone.includes(query)
-    );
-
-    // In a real database implementation, it would look like:
-    // return await db
-    //   .select()
-    //   .from(students)
-    //   .where(
-    //     or(
-    //       ilike(students.name, `%${query}%`),
-    //       ilike(students.phone, `%${query}%`)
-    //     )
-    //   );
-  }
-
-  async searchByEmail(query: string): Promise<any[]> {
-    // Mock implementation
-    return mockStudents.filter(student => 
-      student.email.includes(query) || 
-      student.socialEmail.includes(query)
-    );
-
-    // In a real database implementation:
-    // return await db
-    //   .select()
-    //   .from(students)
-    //   .where(
-    //     or(
-    //       ilike(students.email, `%${query}%`),
-    //       ilike(students.socialEmail, `%${query}%`)
-    //     )
-    //   );
+  async getUserLoginHistory(userId: number): Promise<Array<{userId:number, timestamp:string, ipAddress:string}>> {
+    return this.loginLogs.filter(log => log.userId === userId);
   }
 }
 
-export const storage = new Storage();
+export const storage = new MemStorage();

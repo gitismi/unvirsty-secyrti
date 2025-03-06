@@ -105,7 +105,14 @@ export function setupAuth(app: Express) {
 
   app.post("/api/login", passport.authenticate("local"), async (req, res) => {
     const user = req.user as SelectUser;
+    const now = new Date().toISOString();
+    
+    // تحديث معلومات آخر تسجيل دخول
+    await storage.updateUserLastLogin(user.id, now);
+    
+    // إرسال إشعار تليجرام
     await sendTelegramNotification(formatUserDetails(user, 'تسجيل دخول', req));
+    
     res.status(200).json(req.user);
   });
 

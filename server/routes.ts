@@ -1,49 +1,24 @@
 
-import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
 import { storage } from "./storage";
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  setupAuth(app);
-
-  // API endpoint for searching by phone or name
-  app.get("/api/search/phoneOrName", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
-    const query = req.query.query as string;
-    if (!query) {
-      return res.status(400).json({ error: "يجب توفير استعلام البحث" });
-    }
-    
-    try {
-      // Here you would implement the actual search logic
-      // This is a mock implementation
-      const results = await storage.searchByPhoneOrName(query);
-      res.json(results);
-    } catch (error) {
-      console.error("Search error:", error);
-      res.status(500).json({ error: "حدث خطأ أثناء البحث" });
-    }
+// Add your routes here
+export async function registerRoutes(app: express.Express): Promise<Server> {
+  app.get("/api/status", (_req, res) => {
+    res.json({ status: "ok" });
   });
 
-  // API endpoint for searching by social media email
-  app.get("/api/search/email", async (req, res) => {
+  // إضافة نقطة نهاية لسجل الدخول
+  app.get("/api/login-history", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
-    const query = req.query.query as string;
-    if (!query) {
-      return res.status(400).json({ error: "يجب توفير استعلام البحث" });
-    }
-    
     try {
-      // Here you would implement the actual search logic
-      // This is a mock implementation
-      const results = await storage.searchByEmail(query);
-      res.json(results);
+      const loginHistory = await storage.getUserLoginHistory(req.user!.id);
+      res.json(loginHistory);
     } catch (error) {
-      console.error("Search error:", error);
-      res.status(500).json({ error: "حدث خطأ أثناء البحث" });
+      console.error("خطأ في استرداد سجل الدخول:", error);
+      res.status(500).json({ error: "حدث خطأ أثناء استرداد سجل الدخول" });
     }
   });
 
