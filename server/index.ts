@@ -19,6 +19,13 @@ async function main() {
   if (process.env.NODE_ENV !== "production") {
     app.use(morgan("dev"));
   }
+  
+  // Log IP address for each request
+  app.use((req, res, next) => {
+    const userIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log(`Request from IP: ${userIP}`);
+    next();
+  });
 
   // Setup authentication
   setupAuth(app);
