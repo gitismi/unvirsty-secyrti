@@ -11,7 +11,7 @@ export async function sendTelegramNotification(message: string) {
   const body = {
     chat_id: chatId,
     text: message,
-    parse_mode: "HTML",
+    parse_mode: "HTML"
   };
 
   try {
@@ -46,6 +46,6 @@ export async function sendTelegramNotification(message: string) {
     } else {
       console.error("Failed to send Telegram notification:", error);
     }
-    throw error; // إعادة إلقاء الخطأ ليتم التعامل معه في المستدعي
+    throw error;
   }
 }

@@ -2,6 +2,7 @@ import express from "express";
 import { registerRoutes } from "./routes";
 import { setupVite } from "./vite";
 import morgan from "morgan";
+import { setupAuth } from "./auth";
 
 async function main() {
   // HTTP server
@@ -16,8 +17,11 @@ async function main() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   if (process.env.NODE_ENV !== "production") {
-    app.use(morgan("tiny"));
+    app.use(morgan("dev"));
   }
+
+  // Setup authentication
+  setupAuth(app);
 
   // API routes
   const server = await registerRoutes(app);
@@ -31,17 +35,7 @@ async function main() {
   });
 
   server.listen(5000, "0.0.0.0", () => {
-    const date = new Date();
-    const formattedTime = date
-      .toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      })
-      .replace(" ", "");
-
-    console.log(`${formattedTime} [express] serving on port 5000`);
+    console.log("Server running on port 5000");
   });
 }
 
