@@ -28,6 +28,10 @@ export default function HomePage() {
             <p>تم تسجيل دخولك بنجاح</p>
           </div>
 
+          <div className="text-center py-4">
+            <span className="text-4xl font-bold text-primary">٢</span>
+          </div>
+
           <p className="text-gray-600">سوف تصلك رسالة الموقع على بريدك المدخل قريباً</p>
 
           <Button onClick={handleLogout} variant="outline" className="mt-6 w-full">
