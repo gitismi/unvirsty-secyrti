@@ -5,6 +5,12 @@ import { storage } from "./storage";
 
 // Add your routes here
 export async function registerRoutes(app: express.Express): Promise<Server> {
+  // إضافة middleware لضمان تعيين نوع المحتوى بشكل صحيح لجميع طلبات API
+  app.use('/api', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    next();
+  });
+
   app.get("/api/status", (_req, res) => {
     res.json({ status: "ok" });
   });
