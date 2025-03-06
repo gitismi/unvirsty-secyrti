@@ -2,6 +2,7 @@
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import geoip from "geoip-lite";
 
 // Add your routes here
 export async function registerRoutes(app: express.Express): Promise<Server> {
@@ -13,6 +14,12 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
 
   app.get("/api/status", (_req, res) => {
     res.json({ status: "ok" });
+  });
+  
+  app.get("/api/location", (req, res) => {
+    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const geo = geoip.lookup(String(ip).split(",")[0].trim());
+    res.json({ ip, location: geo });
   });
 
   // إضافة نقطة نهاية لسجل الدخول
