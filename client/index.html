@@ -1,40 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>نظام الطلاب</title>
-    <style>
-        .hidden { display: none; }
-        button { margin: 10px; padding: 15px; cursor: pointer; }
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #forms input { padding: 10px; margin: 10px; }
-    </style>
+    <title>نظام أمن الجامعة</title>
   </head>
   <body>
-    <!-- شاشة الدخول -->
-    <div id="loginScreen">
-        <h1>نظام الطلاب</h1>
-        <button onclick="login()">تسجيل الدخول</button>
-    </div>
-
-    <!-- شاشة الخدمات -->
-    <div id="services" class="hidden">
-        <h2>الخدمات المتاحة</h2>
-        <button onclick="showStudentData()">عرض بيانات الطالب</button>
-        <button onclick="fetchBySocial()">استخراج الرقم عبر السوشيال ميديا</button>
-        <button onclick="showAllResults()">عرض جميع النتائج</button>
-    </div>
-
-    <!-- نموذج إدخال رقم القيد -->
-    <div id="forms" class="hidden">
-        <div id="studentDataForm">
-            <input type="number" id="enrollmentNumber" placeholder="رقم القيد">
-            <button onclick="fetchStudentData()">بحث</button>
-        </div>
-    </div>
-
-    <script src="/script.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

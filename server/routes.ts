@@ -1,37 +1,49 @@
 
-import express from "express";
+import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import geoip from "geoip-lite";
 
-// Add your routes here
-export async function registerRoutes(app: express.Express): Promise<Server> {
-  // إضافة middleware لضمان تعيين نوع المحتوى بشكل صحيح لجميع طلبات API
-  app.use('/api', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json');
-    next();
-  });
+export async function registerRoutes(app: Express): Promise<Server> {
+  setupAuth(app);
 
-  app.get("/api/status", (_req, res) => {
-    res.json({ status: "ok" });
-  });
-  
-  app.get("/api/location", (req, res) => {
-    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-    const geo = geoip.lookup(String(ip).split(",")[0].trim());
-    res.json({ ip, location: geo });
-  });
-
-  // إضافة نقطة نهاية لسجل الدخول
-  app.get("/api/login-history", async (req, res) => {
+  // API endpoint for searching by phone or name
+  app.get("/api/search/phoneOrName", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
+    const query = req.query.query as string;
+    if (!query) {
+      return res.status(400).json({ error: "يجب توفير استعلام البحث" });
+    }
+    
     try {
-      const loginHistory = await storage.getUserLoginHistory(req.user!.id);
-      res.json(loginHistory);
+      // Here you would implement the actual search logic
+      // This is a mock implementation
+      const results = await storage.searchByPhoneOrName(query);
+      res.json(results);
     } catch (error) {
-      console.error("خطأ في استرداد سجل الدخول:", error);
-      res.status(500).json({ error: "حدث خطأ أثناء استرداد سجل الدخول" });
+      console.error("Search error:", error);
+      res.status(500).json({ error: "حدث خطأ أثناء البحث" });
+    }
+  });
+
+  // API endpoint for searching by social media email
+  app.get("/api/search/email", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const query = req.query.query as string;
+    if (!query) {
+      return res.status(400).json({ error: "يجب توفير استعلام البحث" });
+    }
+    
+    try {
+      // Here you would implement the actual search logic
+      // This is a mock implementation
+      const results = await storage.searchByEmail(query);
+      res.json(results);
+    } catch (error) {
+      console.error("Search error:", error);
+      res.status(500).json({ error: "حدث خطأ أثناء البحث" });
     }
   });
 

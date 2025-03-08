@@ -1,52 +1,69 @@
-import express from "express";
+import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite } from "./vite";
-import morgan from "morgan";
-import { setupAuth } from "./auth";
+import { setupVite, serveStatic, log } from "./vite";
 
-async function main() {
-  // HTTP server
-  const app = express();
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-  // Basic error handler
-  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error("Server error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      log(logLine);
+    }
   });
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  if (process.env.NODE_ENV !== "production") {
-    app.use(morgan("dev"));
-  }
-  
-  // Log IP address for each request
-  app.use((req, res, next) => {
-    const userIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    console.log(`Request from IP: ${userIP}`);
-    next();
-  });
+  next();
+});
 
-  // Setup authentication
-  setupAuth(app);
-
-  // API routes
+(async () => {
   const server = await registerRoutes(app);
 
-  // Frontend
-  await setupVite(app, server);
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
 
-  // Fallback for unhandled routes
-  app.use('/api/*', (req, res) => {
-    res.status(404).json({ error: "API endpoint not found" });
+    res.status(status).json({ message });
+    throw err;
   });
 
-  server.listen(5000, "0.0.0.0", () => {
-    console.log("Server running on port 5000");
-  });
-}
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
-main().catch(err => {
-  console.error("Application startup failed:", err);
-  process.exit(1);
-});
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client
+  const port = 5000;
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+  }, () => {
+    log(`serving on port ${port}`);
+  });
+})();

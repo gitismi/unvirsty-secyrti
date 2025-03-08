@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { Shield, CheckCircle } from "lucide-react";
-import MenuButton from "@/components/MenuButton"; // Added import
 
 export default function HomePage() {
   const [, setLocation] = useLocation();
@@ -27,12 +26,6 @@ export default function HomePage() {
           <div className="flex items-center gap-2 mb-4">
             <CheckCircle className="h-5 w-5 text-green-500" />
             <p>تم تسجيل دخولك بنجاح</p>
-          </div>
-
-          <div className="text-center py-4">
-            <div className="w-full"> {/* Replaced 2 with MenuButton */}
-              <MenuButton />
-            </div>
           </div>
 
           <p className="text-gray-600">سوف تصلك رسالة الموقع على بريدك المدخل قريباً</p>

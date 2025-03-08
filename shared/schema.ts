@@ -1,7 +1,6 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { sql } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -11,16 +10,6 @@ export const users = pgTable("users", {
   email: text("email"),
   name: text("name"),
   lastLogin: text("lastLogin")
-});
-
-// جدول سجل الدخول
-export const loginLogs = pgTable("login_logs", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  timestamp: text("timestamp").notNull(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  createdAt: timestamp("created_at").defaultNow()
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
