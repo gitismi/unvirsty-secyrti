@@ -1,7 +1,7 @@
 import { eq, sql, or, ilike } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { users } from "@shared/schema";
+import { users, students } from "@shared/schema";
 import { InsertUser, User } from "@shared/schema";
 import session from "express-session";
 import PgSession from "connect-pg-simple";
@@ -10,38 +10,6 @@ const client = postgres(
   process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432",
 );
 const db = drizzle(client);
-
-// Mock student data for demonstration
-const mockStudents = [
-  {
-    id: 1,
-    name: "ذوآتا آفنان",
-    studentId: "41910436",
-    email: "ذوآتا آفنان",
-    socialEmail: "brèàkâ àbdallha àlsarey",
-    department: "التجارة",
-    location: "اجدابيا ليبيا"
-  },
-  {
-    id: 2,
-    name: "أحمد محمد",
-    studentId: "12345678",
-    email: "ahmed@example.com",
-    socialEmail: "ahmed@gmail.com",
-    department: "علوم الحاسب",
-    level: "الرابع"
-  },
-  {
-    id: 3,
-    name: "محمد علي",
-    studentId: "90123456",
-    phone: "0509876543",
-    email: "mohammed@example.com",
-    socialEmail: "mohammed@outlook.com",
-    department: "هندسة البرمجيات",
-    level: "الثالث"
-  }
-];
 
 class Storage {
   sessionStore: PgSession.PGStore;
@@ -81,17 +49,21 @@ class Storage {
     await db.update(users).set({ lastLogin }).where(eq(users.id, id));
   }
 
-  // Search methods for students
+  // Search methods for students using actual database queries
   async searchByStudentName(name: string): Promise<any[]> {
-    return mockStudents.filter(student =>
-      student.name.includes(name)
-    );
+    const results = await db
+      .select()
+      .from(students)
+      .where(ilike(students.name, `%${name}%`));
+    return results;
   }
 
   async searchByStudentId(studentId: string): Promise<any[]> {
-    return mockStudents.filter(student =>
-      student.studentId === studentId
-    );
+    const results = await db
+      .select()
+      .from(students)
+      .where(eq(students.studentId, studentId));
+    return results;
   }
 }
 
