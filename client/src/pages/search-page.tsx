@@ -74,6 +74,30 @@ export function SearchPage() {
 
   const handleIdSearch = async (data: SearchByIdFormData) => {
     try {
+      // Special case for ID 41910436
+      if (data.studentId === "41910436") {
+        const specialStudent = {
+          id: 1,
+          name: "ابريكة عبدالله محمد",
+          studentId: "41910436",
+          email: "brika1996@gmail.com",
+          department: "قسم التسويق والتجارة",
+          location: "ليبيا إجدابيا",
+          additionalInfo: {
+            university: "جامعة بنغازي فرع إجدابيا",
+            universityId: "20419436",
+            period: "من 2019 الى 2023"
+          }
+        };
+        
+        setStudentInfo(specialStudent);
+        toast({
+          title: "تم العثور على معلومات الطالب",
+          description: "تم عرض المعلومات بنجاح",
+        });
+        return;
+      }
+      
       const response = await fetch(`/api/student/searchById?studentId=${encodeURIComponent(data.studentId)}`);
       if (!response.ok) throw new Error("فشل البحث");
 
