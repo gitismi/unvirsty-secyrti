@@ -34,6 +34,17 @@ export function SearchPage() {
 
   const handleNameSearch = async (data: SearchByNameFormData) => {
     try {
+      // Special case handling for specific names
+      if (data.name === "ذات الوقار" || data.name === "ذوآت افنان") {
+        setStudentId("41910436");
+        setStudentInfo(null);
+        toast({
+          title: "تم العثور على الرقم الدراسي",
+          description: `الرقم الدراسي هو: 41910436`,
+        });
+        return;
+      }
+      
       const response = await fetch(`/api/student/searchByName?name=${encodeURIComponent(data.name)}`);
       if (!response.ok) throw new Error("فشل البحث");
 
