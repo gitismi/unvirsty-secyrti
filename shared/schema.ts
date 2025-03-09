@@ -34,4 +34,10 @@ export const insertStudentSchema = createInsertSchema(students);
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export type Student = typeof students.$inferSelect;
+export type Student = typeof students.$inferSelect & {
+  additionalInfo?: {
+    university?: string;
+    universityId?: string;
+    period?: string;
+  }
+};

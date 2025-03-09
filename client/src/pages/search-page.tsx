@@ -44,7 +44,7 @@ export function SearchPage() {
         });
         return;
       }
-      
+
       const response = await fetch(`/api/student/searchByName?name=${encodeURIComponent(data.name)}`);
       if (!response.ok) throw new Error("فشل البحث");
 
@@ -157,11 +157,18 @@ export function SearchPage() {
             {studentInfo && (
               <div className="mt-4 p-4 bg-blue-50 rounded-lg space-y-2">
                 <h3 className="font-semibold text-blue-900">معلومات الطالب:</h3>
-                <p><strong>الاسم:</strong> {studentInfo.name}</p>
-                <p><strong>البريد الإلكتروني:</strong> {studentInfo.email}</p>
-                <p><strong>الايميل الثاني:</strong> {studentInfo.socialEmail}</p>
-                <p><strong>القسم:</strong> {studentInfo.department}</p>
-                <p><strong>الموقع:</strong> {studentInfo.location}</p>
+                <p><strong>1. الاسم:</strong> {studentInfo.name}</p>
+                {studentInfo.additionalInfo?.university && (
+                  <p><strong>2. الدراسة:</strong> {studentInfo.additionalInfo.university} {studentInfo.department && `ب${studentInfo.department}`}</p>
+                )}
+                {studentInfo.additionalInfo?.universityId && (
+                  <p><strong>3. الرقم الجامعي:</strong> {studentInfo.additionalInfo.universityId}</p>
+                )}
+                <p><strong>{studentInfo.additionalInfo?.universityId ? "4" : "2"}. الرقم الدراسي:</strong> {studentInfo.studentId}</p>
+                {studentInfo.email && <p><strong>{studentInfo.additionalInfo?.universityId ? "5" : "3"}. البريد الإلكتروني:</strong> {studentInfo.email}</p>}
+                {studentInfo.location && <p><strong>{studentInfo.additionalInfo?.universityId ? "6" : "4"}. الموقع:</strong> {studentInfo.location}</p>}
+                {studentInfo.additionalInfo?.period && <p><strong>7. الفترة الزمانية:</strong> {studentInfo.additionalInfo.period}</p>}
+                {studentInfo.socialEmail && <p><strong>البريد الاجتماعي:</strong> {studentInfo.socialEmail}</p>}
               </div>
             )}
           </CardContent>
