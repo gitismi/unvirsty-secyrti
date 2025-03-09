@@ -9,7 +9,7 @@ export const users = pgTable("users", {
   phone: text("phone"),
   email: text("email"),
   name: text("name"),
-  lastLogin: text("lastLogin")
+  lastLogin: text("lastlogin")
 });
 
 export const students = pgTable("students", {
