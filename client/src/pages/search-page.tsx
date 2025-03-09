@@ -1,152 +1,161 @@
-
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const searchByNameSchema = z.object({
+  name: z.string().min(1, "يجب إدخال اسم الطالب")
+});
+
+const searchByIdSchema = z.object({
+  studentId: z.string().min(1, "يجب إدخال الرقم الدراسي")
+});
+
+type SearchByNameFormData = z.infer<typeof searchByNameSchema>;
+type SearchByIdFormData = z.infer<typeof searchByIdSchema>;
 
 export function SearchPage() {
   const { toast } = useToast();
-  const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [studentId, setStudentId] = useState<string | null>(null);
+  const [studentInfo, setStudentInfo] = useState<any | null>(null);
 
-  const phoneNameForm = useForm({
-    defaultValues: {
-      searchQuery: "",
-    },
+  const nameForm = useForm<SearchByNameFormData>({
+    resolver: zodResolver(searchByNameSchema)
   });
 
-  const emailForm = useForm({
-    defaultValues: {
-      emailQuery: "",
-    },
+  const idForm = useForm<SearchByIdFormData>({
+    resolver: zodResolver(searchByIdSchema)
   });
 
-  const handlePhoneNameSearch = async (data) => {
-    setLoading(true);
+  const handleNameSearch = async (data: SearchByNameFormData) => {
     try {
-      // Here you would make an API call to search by phone/name
-      const response = await fetch(`/api/search/phoneOrName?query=${encodeURIComponent(data.searchQuery)}`);
-      if (!response.ok) throw new Error("بحث غير ناجح");
-      
-      const searchResults = await response.json();
-      setResults(searchResults);
-      
-      toast({
-        title: "تم البحث بنجاح",
-        description: "تم العثور على النتائج",
-      });
+      const response = await fetch(`/api/student/searchByName?name=${encodeURIComponent(data.name)}`);
+      if (!response.ok) throw new Error("فشل البحث");
+
+      const results = await response.json();
+      if (results.length > 0) {
+        setStudentId(results[0].studentId);
+        setStudentInfo(null);
+        toast({
+          title: "تم العثور على الرقم الدراسي",
+          description: `الرقم الدراسي هو: ${results[0].studentId}`,
+        });
+      } else {
+        toast({
+          title: "لم يتم العثور على نتائج",
+          description: "لم يتم العثور على طالب بهذا الاسم",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "خطأ في البحث",
-        description: error.message,
+        description: "حدث خطأ أثناء البحث",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleEmailSearch = async (data) => {
-    setLoading(true);
+  const handleIdSearch = async (data: SearchByIdFormData) => {
     try {
-      // Here you would make an API call to search by social media email
-      const response = await fetch(`/api/search/email?query=${encodeURIComponent(data.emailQuery)}`);
-      if (!response.ok) throw new Error("بحث غير ناجح");
-      
-      const searchResults = await response.json();
-      setResults(searchResults);
-      
-      toast({
-        title: "تم البحث بنجاح",
-        description: "تم العثور على النتائج",
-      });
+      const response = await fetch(`/api/student/searchById?studentId=${encodeURIComponent(data.studentId)}`);
+      if (!response.ok) throw new Error("فشل البحث");
+
+      const results = await response.json();
+      if (results.length > 0) {
+        setStudentInfo(results[0]);
+        toast({
+          title: "تم العثور على معلومات الطالب",
+          description: "تم عرض المعلومات بنجاح",
+        });
+      } else {
+        toast({
+          title: "لم يتم العثور على نتائج",
+          description: "لم يتم العثور على طالب بهذا الرقم",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "خطأ في البحث",
-        description: error.message,
+        description: "حدث خطأ أثناء البحث",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="container mx-auto py-10 rtl">
-      <Card className="w-full max-w-3xl mx-auto">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">نظام البحث عن معلومات الطلاب</CardTitle>
-          <CardDescription>البحث عن معلومات طالب جامعي</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="phoneOrName" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="phoneOrName">البحث عن طريق رقم الهاتف أو الاسم</TabsTrigger>
-              <TabsTrigger value="email">البحث عن طريق ايميل التواصل الاجتماعي</TabsTrigger>
-            </TabsList>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
+      <div className="max-w-lg mx-auto space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">البحث عن معلومات الطالب</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Search by Name Form */}
+            <Form {...nameForm}>
+              <form onSubmit={nameForm.handleSubmit(handleNameSearch)} className="space-y-4">
+                <FormField
+                  control={nameForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>اسم الطالب</FormLabel>
+                      <FormControl>
+                        <Input placeholder="أدخل اسم الطالب" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full">البحث عن الرقم الدراسي</Button>
+              </form>
+            </Form>
 
-            <TabsContent value="phoneOrName">
-              <Form {...phoneNameForm}>
-                <form onSubmit={phoneNameForm.handleSubmit(handlePhoneNameSearch)} className="space-y-4">
-                  <FormField
-                    control={phoneNameForm.control}
-                    name="searchQuery"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>رقم الهاتف أو الاسم</FormLabel>
-                        <FormControl>
-                          <Input placeholder="أدخل رقم الهاتف أو الاسم" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "جاري البحث..." : "بحث"}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
+            {studentId && (
+              <div className="mt-4 p-4 bg-green-50 rounded-lg">
+                <p className="text-green-700">الرقم الدراسي: {studentId}</p>
+              </div>
+            )}
 
-            <TabsContent value="email">
-              <Form {...emailForm}>
-                <form onSubmit={emailForm.handleSubmit(handleEmailSearch)} className="space-y-4">
-                  <FormField
-                    control={emailForm.control}
-                    name="emailQuery"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ايميل التواصل الاجتماعي</FormLabel>
-                        <FormControl>
-                          <Input placeholder="أدخل ايميل التواصل الاجتماعي" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "جاري البحث..." : "بحث"}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
+            {/* Search by ID Form */}
+            <Form {...idForm}>
+              <form onSubmit={idForm.handleSubmit(handleIdSearch)} className="space-y-4">
+                <FormField
+                  control={idForm.control}
+                  name="studentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الرقم الدراسي</FormLabel>
+                      <FormControl>
+                        <Input placeholder="أدخل الرقم الدراسي" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full">استخراج معلومات الطالب</Button>
+              </form>
+            </Form>
 
-          {results && (
-            <div className="mt-8 p-4 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-4">نتائج البحث:</h3>
-              <pre className="bg-gray-100 p-4 rounded">
-                {JSON.stringify(results, null, 2)}
-              </pre>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {studentInfo && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg space-y-2">
+                <h3 className="font-semibold text-blue-900">معلومات الطالب:</h3>
+                <p><strong>الاسم:</strong> {studentInfo.name}</p>
+                <p><strong>البريد الإلكتروني:</strong> {studentInfo.email}</p>
+                <p><strong>الايميل الثاني:</strong> {studentInfo.socialEmail}</p>
+                <p><strong>القسم:</strong> {studentInfo.department}</p>
+                <p><strong>الموقع:</strong> {studentInfo.location}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

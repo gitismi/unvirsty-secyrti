@@ -12,6 +12,16 @@ export const users = pgTable("users", {
   lastLogin: text("lastLogin")
 });
 
+export const students = pgTable("students", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  studentId: text("studentId").notNull(),
+  email: text("email"),
+  socialEmail: text("socialEmail"),
+  department: text("department"),
+  location: text("location")
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -20,5 +30,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true
 });
 
+export const insertStudentSchema = createInsertSchema(students);
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type Student = typeof students.$inferSelect;

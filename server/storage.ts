@@ -15,18 +15,26 @@ const db = drizzle(client);
 const mockStudents = [
   {
     id: 1,
+    name: "ذوآتا آفنان",
+    studentId: "41910436",
+    email: "ذوآتا آفنان",
+    socialEmail: "brèàkâ àbdallha àlsarey",
+    department: "التجارة",
+    location: "اجدابيا ليبيا"
+  },
+  {
+    id: 2,
     name: "أحمد محمد",
-    studentId: "123456",
-    phone: "0501234567",
+    studentId: "12345678",
     email: "ahmed@example.com",
     socialEmail: "ahmed@gmail.com",
     department: "علوم الحاسب",
     level: "الرابع"
   },
   {
-    id: 2,
+    id: 3,
     name: "محمد علي",
-    studentId: "789012",
+    studentId: "90123456",
     phone: "0509876543",
     email: "mohammed@example.com",
     socialEmail: "mohammed@outlook.com",
@@ -74,45 +82,16 @@ class Storage {
   }
 
   // Search methods for students
-  async searchByPhoneOrName(query: string): Promise<any[]> {
-    // In a real application, you would query your database
-    // For now, we'll use mock data for demonstration
-
-    // This is a mock implementation
-    return mockStudents.filter(student => 
-      student.name.includes(query) || 
-      student.phone.includes(query)
+  async searchByStudentName(name: string): Promise<any[]> {
+    return mockStudents.filter(student =>
+      student.name.includes(name)
     );
-
-    // In a real database implementation, it would look like:
-    // return await db
-    //   .select()
-    //   .from(students)
-    //   .where(
-    //     or(
-    //       ilike(students.name, `%${query}%`),
-    //       ilike(students.phone, `%${query}%`)
-    //     )
-    //   );
   }
 
-  async searchByEmail(query: string): Promise<any[]> {
-    // Mock implementation
-    return mockStudents.filter(student => 
-      student.email.includes(query) || 
-      student.socialEmail.includes(query)
+  async searchByStudentId(studentId: string): Promise<any[]> {
+    return mockStudents.filter(student =>
+      student.studentId === studentId
     );
-
-    // In a real database implementation:
-    // return await db
-    //   .select()
-    //   .from(students)
-    //   .where(
-    //     or(
-    //       ilike(students.email, `%${query}%`),
-    //       ilike(students.socialEmail, `%${query}%`)
-    //     )
-    //   );
   }
 }
 
