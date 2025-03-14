@@ -1,73 +1,65 @@
-import { eq, sql, or, ilike } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { users, students } from "@shared/schema";
 import { InsertUser, User } from "@shared/schema";
 import session from "express-session";
-import PgSession from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 
-const client = postgres(
-  process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432",
-);
-const db = drizzle(client);
+const MemoryStore = createMemoryStore(session);
 
 // Mock student data for testing
 const mockStudents = [
   {
     id: 1,
+    name: "علي أحمد اسامة إبراهيم محمد",
+    studentId: "41920120",
+    email: "ali Albuosifi",
+    department: "الاقتصاد قسم المحاسبة",
+    location: "ليبيا أجدابيا"
+  },
+  {
+    id: 2,
     name: "ذوآتا آفنان",
     studentId: "41910436",
     email: "ذوآتا آفنان",
     socialEmail: "brèàkâ àbdallha àlsarey",
     department: "التجارة",
     location: "اجدابيا ليبيا"
-  },
-  {
-    id: 2,
-    name: "علي أحمد اسامة إبراهيم محمد",
-    studentId: "41920120",
-    email: "ali Albuosifi",
-    department: "الاقتصاد قسم المحاسبة",
-    location: "ليبيا أجدابيا"
   }
 ];
 
+let users: User[] = [];
+let nextId = 1;
+
 class Storage {
-  sessionStore: PgSession.PGStore;
+  sessionStore: session.Store;
 
   constructor() {
-    const pgSession = PgSession(session);
-    this.sessionStore = new pgSession({
-      conObject: {
-        connectionString:
-          process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432",
-      },
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return users.find(u => u.id === id);
   }
 
   async getUserByIdentifier(identifier: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, identifier));
-    return user;
+    return users.find(u => u.username === identifier);
   }
 
   async createUser(userData: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .returning({ id: users.id, username: users.username, email: users.email, phone: users.phone, name: users.name });
+    const user = {
+      id: nextId++,
+      ...userData,
+      lastLogin: new Date().toISOString()
+    };
+    users.push(user as User);
     return user as User;
   }
 
   async updateUserLastLogin(id: number, lastLogin: string): Promise<void> {
-    await db.update(users).set({ lastLogin }).where(eq(users.id, id));
+    const user = users.find(u => u.id === id);
+    if (user) {
+      user.lastLogin = lastLogin;
+    }
   }
 
   // Search methods for students using mock data

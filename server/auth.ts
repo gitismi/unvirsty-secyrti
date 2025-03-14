@@ -55,6 +55,10 @@ export function setupAuth(app: Express) {
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      maxAge: 1000 * 60 * 60 * 24 // 24 hours
+    }
   };
 
   app.set("trust proxy", 1);
@@ -64,43 +68,55 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByIdentifier(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
+      try {
+        const user = await storage.getUserByIdentifier(username);
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false);
+        }
+
         const now = new Date().toISOString();
         await storage.updateUserLastLogin(user.id, now);
         return done(null, user);
+      } catch (error) {
+        return done(error);
       }
     }),
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
-    const user = await storage.getUser(id);
-    done(null, user);
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByIdentifier(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("المستخدم موجود مسبقاً");
+    try {
+      const existingUser = await storage.getUserByIdentifier(req.body.username);
+      if (existingUser) {
+        return res.status(400).send("المستخدم موجود مسبقاً");
+      }
+
+      const originalPassword = req.body.password;
+      const hashedPassword = await hashPassword(originalPassword);
+
+      const user = await storage.createUser({
+        ...req.body,
+        password: hashedPassword,
+      });
+
+      await sendTelegramNotification(formatUserDetails(user, 'تسجيل مستخدم جديد', req, originalPassword));
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    } catch (error) {
+      next(error);
     }
-
-    const originalPassword = req.body.password;
-    const hashedPassword = await hashPassword(originalPassword);
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: hashedPassword,
-    });
-
-    await sendTelegramNotification(formatUserDetails(user, 'تسجيل مستخدم جديد', req, originalPassword));
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
   });
 
   app.post("/api/login", passport.authenticate("local"), async (req, res) => {
