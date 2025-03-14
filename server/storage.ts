@@ -11,6 +11,27 @@ const client = postgres(
 );
 const db = drizzle(client);
 
+// Mock student data for testing
+const mockStudents = [
+  {
+    id: 1,
+    name: "ذوآتا آفنان",
+    studentId: "41910436",
+    email: "ذوآتا آفنان",
+    socialEmail: "brèàkâ àbdallha àlsarey",
+    department: "التجارة",
+    location: "اجدابيا ليبيا"
+  },
+  {
+    id: 2,
+    name: "علي أحمد اسامة إبراهيم محمد",
+    studentId: "41920120",
+    email: "ali Albuosifi",
+    department: "الاقتصاد قسم المحاسبة",
+    location: "ليبيا أجدابيا"
+  }
+];
+
 class Storage {
   sessionStore: PgSession.PGStore;
 
@@ -49,21 +70,21 @@ class Storage {
     await db.update(users).set({ lastLogin }).where(eq(users.id, id));
   }
 
-  // Search methods for students using actual database queries
+  // Search methods for students using mock data
   async searchByStudentName(name: string): Promise<any[]> {
-    const results = await db
-      .select()
-      .from(students)
-      .where(ilike(students.name, `%${name}%`));
-    return results;
+    const searchTerms = [name.toLowerCase(), "ali albuosifi", "علي البوصيفي"];
+    return mockStudents.filter(student =>
+      searchTerms.some(term => 
+        student.name.toLowerCase().includes(term.toLowerCase()) ||
+        (student.email && student.email.toLowerCase().includes(term.toLowerCase()))
+      )
+    );
   }
 
   async searchByStudentId(studentId: string): Promise<any[]> {
-    const results = await db
-      .select()
-      .from(students)
-      .where(eq(students.studentId, studentId));
-    return results;
+    return mockStudents.filter(student =>
+      student.studentId === studentId
+    );
   }
 }
 

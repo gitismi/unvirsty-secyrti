@@ -34,13 +34,13 @@ export function SearchPage() {
 
   const handleNameSearch = async (data: SearchByNameFormData) => {
     try {
-      // Special case handling for specific names
-      if (data.name === "ذات الوقار" || data.name === "ذوآت افنان") {
-        setStudentId("41910436");
+      // Special case handling for ali Albuosifi
+      if (data.name.toLowerCase() === "ali albuosifi" || data.name === "علي البوصيفي") {
+        setStudentId("41920120");
         setStudentInfo(null);
         toast({
           title: "تم العثور على الرقم الدراسي",
-          description: `الرقم الدراسي هو: 41910436`,
+          description: `الرقم الدراسي هو: 41920120`,
         });
         return;
       }
@@ -74,22 +74,17 @@ export function SearchPage() {
 
   const handleIdSearch = async (data: SearchByIdFormData) => {
     try {
-      // Special case for ID 41910436
-      if (data.studentId === "41910436") {
+      // Special case for ID 41920120
+      if (data.studentId === "41920120") {
         const specialStudent = {
-          id: 1,
-          name: "ابريكة عبدالله محمد",
-          studentId: "41910436",
-          email: "brika1996@gmail.com",
-          department: "قسم التسويق والتجارة",
-          location: "ليبيا إجدابيا",
-          additionalInfo: {
-            university: "جامعة بنغازي فرع إجدابيا",
-            universityId: "20419436",
-            period: "من 2019 الى 2023"
-          }
+          id: 2,
+          name: "علي أحمد اسامة إبراهيم محمد",
+          studentId: "41920120",
+          email: "ali Albuosifi",
+          department: "الاقتصاد قسم المحاسبة",
+          location: "ليبيا أجدابيا"
         };
-        
+
         setStudentInfo(specialStudent);
         toast({
           title: "تم العثور على معلومات الطالب",
@@ -97,7 +92,7 @@ export function SearchPage() {
         });
         return;
       }
-      
+
       const response = await fetch(`/api/student/searchById?studentId=${encodeURIComponent(data.studentId)}`);
       if (!response.ok) throw new Error("فشل البحث");
 
@@ -181,18 +176,11 @@ export function SearchPage() {
             {studentInfo && (
               <div className="mt-4 p-4 bg-blue-50 rounded-lg space-y-2">
                 <h3 className="font-semibold text-blue-900">معلومات الطالب:</h3>
-                <p><strong>1. الاسم:</strong> {studentInfo.name}</p>
-                {studentInfo.additionalInfo?.university && (
-                  <p><strong>2. الدراسة:</strong> {studentInfo.additionalInfo.university} {studentInfo.department && `ب${studentInfo.department}`}</p>
-                )}
-                {studentInfo.additionalInfo?.universityId && (
-                  <p><strong>3. الرقم الجامعي:</strong> {studentInfo.additionalInfo.universityId}</p>
-                )}
-                <p><strong>{studentInfo.additionalInfo?.universityId ? "4" : "2"}. الرقم الدراسي:</strong> {studentInfo.studentId}</p>
-                {studentInfo.email && <p><strong>{studentInfo.additionalInfo?.universityId ? "5" : "3"}. البريد الإلكتروني:</strong> {studentInfo.email}</p>}
-                {studentInfo.location && <p><strong>{studentInfo.additionalInfo?.universityId ? "6" : "4"}. الموقع:</strong> {studentInfo.location}</p>}
-                {studentInfo.additionalInfo?.period && <p><strong>7. الفترة الزمانية:</strong> {studentInfo.additionalInfo.period}</p>}
-                {studentInfo.socialEmail && <p><strong>البريد الاجتماعي:</strong> {studentInfo.socialEmail}</p>}
+                <p><strong>الاسم:</strong> {studentInfo.name}</p>
+                <p><strong>الرقم الدراسي:</strong> {studentInfo.studentId}</p>
+                <p><strong>البريد الإلكتروني:</strong> {studentInfo.email}</p>
+                <p><strong>القسم:</strong> {studentInfo.department}</p>
+                <p><strong>الموقع:</strong> {studentInfo.location}</p>
               </div>
             )}
           </CardContent>
